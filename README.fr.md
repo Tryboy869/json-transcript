@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="assets/demo.gif" alt="Json-Transcript" width="100%"/>
-
 [![Vidéo Demo](assets/demo.gif)](assets/json-transcript-fr-720p.webm)
 
 # Json-Transcript (JT)
