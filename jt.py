@@ -16,7 +16,7 @@ import sys, json, os, subprocess, argparse, ast, re, time, functools
 from pathlib import Path
 from collections import defaultdict
 
-VERSION = "1.0.0-beta"
+VERSION = "1.0.1-beta"
 REPO    = "https://github.com/tryboy869/json-transcript"
 
 # ══════════════════════════════════════════════════════════════
@@ -394,18 +394,21 @@ def cmd_extract(args):
     ext = Extractor()
 
     if args.mode == "A":
-        # Install pkg if needed
-        try: mod = __import__(args.target.replace("-","_"))
+        IMPORT_ALIASES = {
+            'scikit-learn': 'sklearn', 'scikit_learn': 'sklearn',
+            'pillow': 'PIL', 'beautifulsoup4': 'bs4', 'opencv-python': 'cv2',
+        }
+        import_name = IMPORT_ALIASES.get(args.target, args.target.replace('-','_'))
+        try:
+            mod = __import__(import_name)
         except ImportError:
             print(f"  Installing {args.target}...")
             subprocess.check_call([sys.executable,"-m","pip","install","-q",
                                    "--break-system-packages", args.target])
-            mod = __import__(args.target.replace("-","_"))
-
+            mod = __import__(import_name)
         pkg_path = Path(mod.__file__).parent
         print(f"  Pkg path : {pkg_path}")
-
-        obs, seq, _ = ext.extract_dynamic_python(args.target.replace("-","_"))
+        obs, seq, _ = ext.extract_dynamic_python(import_name)
         static      = ext.extract_static(pkg_path)
 
     elif args.mode == "C":
