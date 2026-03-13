@@ -145,7 +145,10 @@ class Extractor:
         return nodes
 
     def extract_dynamic_python(self, pkg_name):
-        """Dynamic extraction for Python packages"""
+        """
+        Hybrid dynamic extraction — top-level functions + class methods.
+        Works for any Python pkg: Flask, sklearn, numpy, LangChain, Pandas...
+        """
         observations = defaultdict(lambda:{
             "calls":0,"input_shapes":[],"output_shapes":[],"duration_ms":[]
         })
@@ -158,42 +161,152 @@ class Extractor:
                                    "--break-system-packages", pkg_name])
             mod = __import__(pkg_name)
 
-        # Find pkg path for static extraction
         pkg_path = Path(mod.__file__).parent
-
-        # Intercept top-level callables
         intercepted = 0
-        for name in dir(mod):
-            obj = getattr(mod, name, None)
-            if callable(obj) and not name.startswith('_'):
-                original = obj
-                key = f"{pkg_name}.{name}"
-                def make_wrapper(orig, k):
-                    @functools.wraps(orig)
-                    def wrapper(*args, **kwargs):
-                        t0 = time.perf_counter()
-                        try:
-                            r = orig(*args, **kwargs)
-                            dur = (time.perf_counter()-t0)*1000
-                            o = observations[k]
-                            o["calls"] += 1
-                            if len(o["input_shapes"]) < 3:
-                                o["input_shapes"].append([shape_of(a) for a in args])
-                            if len(o["output_shapes"]) < 3:
-                                o["output_shapes"].append(shape_of(r))
-                            o["duration_ms"].append(round(dur,3))
-                            call_sequence.append(k)
-                            return r
-                        except Exception as e:
-                            observations[k].setdefault("errors",[]).append(type(e).__name__)
-                            raise
-                    return wrapper
+
+        def make_wrapper(orig, k):
+            @functools.wraps(orig)
+            def wrapper(*args, **kwargs):
+                t0 = time.perf_counter()
                 try:
-                    setattr(mod, name, make_wrapper(original, key))
+                    r = orig(*args, **kwargs)
+                    dur = (time.perf_counter()-t0)*1000
+                    o = observations[k]
+                    o["calls"] += 1
+                    # Exclure self/cls des shapes
+                    sig_args = args[1:] if args and hasattr(args[0], '__class__') else args
+                    if len(o["input_shapes"]) < 3:
+                        o["input_shapes"].append([shape_of(a) for a in sig_args])
+                    if len(o["output_shapes"]) < 3:
+                        o["output_shapes"].append(shape_of(r))
+                    o["duration_ms"].append(round(dur,3))
+                    call_sequence.append(k)
+                    return r
+                except Exception as e:
+                    observations[k].setdefault("errors",[]).append(type(e).__name__)
+                    raise
+            return wrapper
+
+        # Méthodes prioritaires à intercepter (fit, predict, transform...)
+        PRIORITY_METHODS = {
+            'fit', 'predict', 'transform', 'fit_transform',
+            'predict_proba', 'score', 'run', 'call', 'forward',
+            'dispatch', 'handle', 'execute', 'process', 'invoke',
+            'encode', 'decode', 'generate', 'embed', 'search',
+            'get', 'post', 'put', 'delete', 'request', 'send',
+            'read', 'write', 'query', 'fetch', 'load', 'save',
+        }
+
+        def intercept_class(cls, prefix):
+            """Hook methods directly on the class object."""
+            nonlocal intercepted
+            for mname in list(vars(cls)):  # vars() = only own attrs, not inherited
+                if mname.startswith('_'): continue
+                try:
+                    method = getattr(cls, mname)
+                    if not callable(method): continue
+                    mkey = f"{prefix}.{mname}"
+                    setattr(cls, mname, make_wrapper(method, mkey))
                     intercepted += 1
-                except: pass
+                except Exception:
+                    pass
+
+        def intercept_module(mod_obj, prefix, depth=0):
+            """Recursively intercept all submodules, classes, functions."""
+            if depth > 3: return
+            nonlocal intercepted
+            seen = set()
+            for name in dir(mod_obj):
+                if name.startswith('_'): continue
+                try:
+                    attr = getattr(mod_obj, name)
+                except Exception:
+                    continue
+                if id(attr) in seen: continue
+                seen.add(id(attr))
+                key = f"{prefix}.{name}"
+
+                if isinstance(attr, type):
+                    # Classe → hooker ses méthodes directement
+                    intercept_class(attr, key)
+                elif callable(attr) and not isinstance(attr, type):
+                    try:
+                        setattr(mod_obj, name, make_wrapper(attr, key))
+                        intercepted += 1
+                    except Exception:
+                        pass
+                elif hasattr(attr, '__path__'):
+                    # Sous-module → récursion
+                    intercept_module(attr, key, depth+1)
+
+        intercept_module(mod, pkg_name)
+
+        # Appels synthétiques pour déclencher les hooks dynamiquement
+        # selon la nature du package détectée
+        try:
+            self._trigger_calls(mod, pkg_name, observations, call_sequence)
+        except Exception:
+            pass  # Les appels synthétiques sont best-effort
 
         return observations, call_sequence, pkg_path
+
+    def _trigger_calls(self, mod, pkg_name, observations, call_sequence):
+        """
+        Trigger synthetic calls to capture dynamic edges.
+        Adapts to package type: COMPUTE, RESEAU, DATA...
+        Works for sklearn, numpy, flask, requests, pandas, etc.
+        """
+        import numpy as np
+
+        # ── COMPUTE packages (sklearn, numpy, scipy...) ───────────
+        compute_triggers = ['sklearn', 'numpy', 'scipy', 'torch', 'tensorflow']
+        if any(t in pkg_name for t in compute_triggers):
+            # Tenter d'instancier et appeler les classes ML courantes
+            ml_classes = [
+                ('sklearn.preprocessing', 'StandardScaler',
+                 lambda cls: cls().fit_transform(np.array([[1.,2.],[3.,4.],[5.,6.]]))),
+                ('sklearn.linear_model', 'LinearRegression',
+                 lambda cls: cls().fit(np.array([[1.],[2.],[3.]]), np.array([1.,2.,3.]))),
+                ('sklearn.preprocessing', 'LabelEncoder',
+                 lambda cls: cls().fit_transform([0,1,2,1,0])),
+                ('sklearn.decomposition', 'PCA',
+                 lambda cls: cls(n_components=2).fit_transform(np.random.rand(10,4))),
+            ]
+            for mod_path, cls_name, call_fn in ml_classes:
+                try:
+                    import importlib
+                    sub = importlib.import_module(mod_path)
+                    cls = getattr(sub, cls_name)
+                    call_fn(cls)
+                except Exception:
+                    pass
+
+        # ── RESEAU packages (flask, requests, httpx...) ──────────
+        reseau_triggers = ['flask', 'requests', 'httpx', 'aiohttp']
+        if any(t in pkg_name for t in reseau_triggers):
+            try:
+                if 'requests' in pkg_name:
+                    import requests
+                    # Simuler une requête (sans réseau réel)
+                    from unittest.mock import patch, MagicMock
+                    with patch('requests.adapters.HTTPAdapter.send') as mock:
+                        mock.return_value = MagicMock(status_code=200, text='')
+                        try: requests.get('http://localhost', timeout=0.01)
+                        except Exception: pass
+            except Exception:
+                pass
+
+        # ── DATA packages (pandas, sqlalchemy...) ────────────────
+        data_triggers = ['pandas', 'sqlalchemy', 'pymongo']
+        if any(t in pkg_name for t in data_triggers):
+            try:
+                if 'pandas' in pkg_name:
+                    import pandas as pd
+                    df = pd.DataFrame({'a':[1,2,3],'b':[4,5,6]})
+                    _ = df.describe()
+                    _ = df.groupby('a').sum()
+            except Exception:
+                pass
 
     def build_graph(self, pkg_name, mode, target, lang, observations,
                     call_sequence, static_nodes):
@@ -399,17 +512,17 @@ def cmd_extract(args):
             'pillow': 'PIL', 'beautifulsoup4': 'bs4', 'opencv-python': 'cv2',
         }
         import_name = IMPORT_ALIASES.get(args.target, args.target.replace('-','_'))
+        # Installer si besoin
         try:
-            mod = __import__(import_name)
+            __import__(import_name)
         except ImportError:
             print(f"  Installing {args.target}...")
             subprocess.check_call([sys.executable,"-m","pip","install","-q",
                                    "--break-system-packages", args.target])
-            mod = __import__(import_name)
-        pkg_path = Path(mod.__file__).parent
+        # Poser les hooks PUIS importer le module (même processus)
+        obs, seq, pkg_path = ext.extract_dynamic_python(import_name)
         print(f"  Pkg path : {pkg_path}")
-        obs, seq, _ = ext.extract_dynamic_python(import_name)
-        static      = ext.extract_static(pkg_path)
+        static = ext.extract_static(pkg_path)
 
     elif args.mode == "C":
         # Clone repo

@@ -2,7 +2,7 @@
 
 <img src="assets/demo.gif" alt="Json-Transcript" width="100%"/>
 
-<video src="assets/json-transcript-en-720p.webm" width="100%" autoplay loop muted playsinline></video>
+[![Demo Video](assets/demo.gif)](assets/json-transcript-en-720p.webm)
 
 # Json-Transcript (JT)
 

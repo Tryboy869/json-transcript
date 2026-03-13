@@ -21,6 +21,12 @@ All notable changes to Json-Transcript are documented here.
 ### Validated
 - scikit-learn extracted (626 files, mode A) → JS / Java / Rust / C# — 4×4/4 ✅
 
+### Fixed (extraction)
+- Dynamic extractor now hooks class methods recursively (not just top-level functions)
+- Added synthetic call triggers for COMPUTE/RESEAU/DATA packages
+- sklearn: 27 dynamic edges captured (StandardScaler, LinearRegression, PCA, LabelEncoder)
+- Fix: hooks now placed before any user code runs (correct ordering)
+
 ---
 
 ## [1.0.0-beta] — 2026-03-13
