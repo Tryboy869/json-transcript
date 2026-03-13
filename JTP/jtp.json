@@ -1,0 +1,89 @@
+{
+  "package": "JTP",
+  "name": "Json-Transcript Python",
+  "runtime": "python",
+  "version": "1.0.0-beta",
+  "docker": "python:3.11-slim",
+  "description": "Python runtime for Json-Transcript — extract any Python package into a portable .jts graph",
+
+  "capabilities": {
+    "extract": {
+      "modes": ["A", "C", "D"],
+      "A_pkg": {
+        "description": "Extract from any pip-installable package",
+        "method": "pip install + static AST + dynamic hooks",
+        "output": "<pkg>.jts"
+      },
+      "C_source": {
+        "description": "Extract from GitHub repo or local source",
+        "method": "clone + static AST + dynamic execution",
+        "output": "<repo>.jts"
+      },
+      "D_binary": {
+        "description": "Extract from opaque binary via dynamic observation only",
+        "method": "subprocess observation + I/O capture",
+        "output": "<binary>.jts"
+      }
+    },
+    "translate": {
+      "targets": ["javascript", "typescript", "java", "csharp", "rust"],
+      "method": "structural similarity — no LLM"
+    },
+    "run": {
+      "description": "Execute any .jts graph on Python runtime",
+      "method": "GraphRuntime interpreter reads and executes the graph directly"
+    },
+    "validate": {
+      "description": "Compare reference results vs translated runtime results"
+    }
+  },
+
+  "install": {
+    "colab": "!curl -sSL https://raw.githubusercontent.com/tryboy869/json-transcript/main/jt.py | python3 - install JTP",
+    "terminal": "curl -sSL https://raw.githubusercontent.com/tryboy869/json-transcript/main/jt.py | python3 - install JTP",
+    "docker": "docker pull ghcr.io/tryboy869/json-transcript:jtp"
+  },
+
+  "commands": {
+    "extract_pkg":    "jt extract --mode A --target <pkg_name> --lang python",
+    "extract_source": "jt extract --mode C --target <github_url> --lang python",
+    "extract_binary": "jt extract --mode D --target <path_to_binary>",
+    "translate":      "jt translate <file.jts> --to <runtime>",
+    "run":            "jt run <file.jts>",
+    "convert":        "jt convert --from python --to <runtime> --target <pkg>"
+  },
+
+  "examples": [
+    {
+      "title": "Extract Flask and run in Rust",
+      "steps": [
+        "jt extract --mode A --target flask --lang python",
+        "jt translate flask.jts --to rust",
+        "jt run flask_rust.jts --port 8080"
+      ]
+    },
+    {
+      "title": "Extract scikit-learn and run in Java",
+      "steps": [
+        "jt extract --mode A --target scikit-learn --lang python",
+        "jt translate scikit-learn.jts --to java",
+        "jt run scikit-learn_java.jts"
+      ]
+    },
+    {
+      "title": "Extract from GitHub repo",
+      "steps": [
+        "jt extract --mode C --target https://github.com/pallets/flask --lang python",
+        "jt translate flask.jts --to typescript",
+        "jt run flask_typescript.jts"
+      ]
+    }
+  ],
+
+  "domain_detection": {
+    "RESEAU":  { "confidence_threshold": 0.5, "signals": ["method","path","status","url"] },
+    "COMPUTE": { "confidence_threshold": 0.5, "signals": ["tensor","matrix","op","transform"] },
+    "DATA":    { "confidence_threshold": 0.5, "signals": ["query","session","db","cache"] },
+    "CONFIG":  { "confidence_threshold": 0.5, "signals": ["config","hook","register","middleware"] }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "package": "JTJV",
+  "version": "1.0.0-beta",
+  "name": "Json-Transcript Java",
+  "runtime": "java",
+  "aliases": [
+    "java"
+  ],
+  "docker": "eclipse-temurin:17-jre-jammy",
+  "description": "Java runtime for Json-Transcript \u2014 enterprise & Android ready",
+  "install_colab": "!curl -sSL https://raw.githubusercontent.com/tryboy869/json-transcript/main/jt.py | python3 - install JTJV",
+  "framework_equiv": {
+    "flask": "spring-boot",
+    "fastapi": "quarkus",
+    "celery": "quartz"
+  },
+  "examples": [
+    {
+      "title": "Extract scikit-learn \u2192 Java",
+      "steps": [
+        "jt extract --mode A --target scikit-learn --lang python",
+        "jt translate scikit-learn.jts --to java",
+        "jt run scikit-learn_java.jts"
+      ]
+    },
+    {
+      "title": "Extract Flask \u2192 Spring Boot",
+      "steps": [
+        "jt extract --mode A --target flask --lang python",
+        "jt translate flask.jts --to java",
+        "jt run flask_java.jts --port 8080"
+      ]
+    }
+  ],
+  "commands": {
+    "extract_pkg": "jt extract --mode A --target <pkg_name> --lang java",
+    "extract_source": "jt extract --mode C --target <github_url> --lang java",
+    "extract_binary": "jt extract --mode D --target <path_to_binary>",
+    "translate": "jt translate <file.jts> --to <runtime>",
+    "run": "jt run <file.jts>",
+    "convert": "jt convert --from java --to <runtime> --target <pkg>"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "package": "JTCS",
+  "version": "1.0.0-beta",
+  "name": "Json-Transcript C#",
+  "runtime": "csharp",
+  "aliases": [
+    "csharp",
+    "dotnet",
+    "cs"
+  ],
+  "docker": "mcr.microsoft.com/dotnet/sdk:8.0",
+  "description": "C# / .NET runtime for Json-Transcript \u2014 Unity, ASP.NET, enterprise",
+  "install_colab": "!curl -sSL https://raw.githubusercontent.com/tryboy869/json-transcript/main/jt.py | python3 - install JTCS",
+  "framework_equiv": {
+    "flask": "asp.net-minimal",
+    "fastapi": "asp.net-core",
+    "pandas": "deedle"
+  },
+  "examples": [
+    {
+      "title": "Extract Flask \u2192 ASP.NET",
+      "steps": [
+        "jt extract --mode A --target flask --lang python",
+        "jt translate flask.jts --to csharp",
+        "jt run flask_csharp.jts --port 5000"
+      ]
+    },
+    {
+      "title": "Extract NumPy \u2192 C#",
+      "steps": [
+        "jt extract --mode A --target numpy --lang python",
+        "jt translate numpy.jts --to csharp",
+        "jt run numpy_csharp.jts"
+      ]
+    }
+  ],
+  "commands": {
+    "extract_pkg": "jt extract --mode A --target <pkg_name> --lang csharp",
+    "extract_source": "jt extract --mode C --target <github_url> --lang csharp",
+    "extract_binary": "jt extract --mode D --target <path_to_binary>",
+    "translate": "jt translate <file.jts> --to <runtime>",
+    "run": "jt run <file.jts>",
+    "convert": "jt convert --from csharp --to <runtime> --target <pkg>"
+  }
+}

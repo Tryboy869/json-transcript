@@ -1,0 +1,128 @@
+{
+  "name": "json-transcript",
+  "version": "1.0.0-beta",
+  "description": "Universal behavioral transcription framework — extract any tool, run anywhere",
+  "author": "Daouda Abdoul Anzize",
+  "license": "MIT",
+  "repository": "https://github.com/tryboy869/json-transcript",
+
+  "runtimes": {
+    "python":     { "package": "JTP",  "version": "3.10+", "docker": "python:3.11-slim" },
+    "javascript": { "package": "JTJS", "version": "20+",   "docker": "node:20-slim" },
+    "typescript": { "package": "JTJS", "version": "5+",    "docker": "node:20-slim" },
+    "java":       { "package": "JTJV", "version": "17+",   "docker": "eclipse-temurin:17-jre-jammy" },
+    "csharp":     { "package": "JTCS", "version": "8+",    "docker": "mcr.microsoft.com/dotnet/sdk:8.0" },
+    "rust":       { "package": "JTR",  "version": "1.75+", "docker": "rust:1.75-slim" }
+  },
+
+  "extraction_modes": {
+    "A": { "id": "pkg",    "description": "Installable package (pip, npm, cargo...)" },
+    "C": { "id": "source", "description": "Public source code / GitHub repository" },
+    "D": { "id": "binary", "description": "Opaque binary — dynamic extraction only" }
+  },
+
+  "domains": {
+    "RESEAU":  { "signals": ["method","path","headers","status","url","route","response"] },
+    "COMPUTE": { "signals": ["op","input","output","tensor","matrix","transform"] },
+    "DATA":    { "signals": ["query","key","table","session","cache","db","model"] },
+    "CONFIG":  { "signals": ["config","setting","hook","middleware","register","flag"] }
+  },
+
+  "cli": {
+    "commands": {
+      "extract": {
+        "description": "Extract behavioral graph from a target tool",
+        "usage": "jt extract --mode <A|C|D> --target <pkg|url|path> --lang <python|js|ts|java|csharp|rust>",
+        "options": {
+          "--mode":   "Extraction mode: A=package, C=source, D=binary",
+          "--target": "Target identifier (pkg name, GitHub URL, or binary path)",
+          "--lang":   "Source language of the target",
+          "--output": "Output file name (default: <target>.jts)",
+          "--depth":  "Extraction depth: shallow|full (default: full)"
+        },
+        "examples": [
+          "jt extract --mode A --target langchain --lang python",
+          "jt extract --mode C --target https://github.com/pallets/flask --lang python",
+          "jt extract --mode D --target ./myapp.bin --lang unknown"
+        ]
+      },
+      "translate": {
+        "description": "Translate a .jts graph to a target runtime",
+        "usage": "jt translate <file.jts> --to <runtime>",
+        "options": {
+          "--to":     "Target runtime: python|javascript|typescript|java|csharp|rust",
+          "--output": "Output file (default: <name>_<runtime>.jts)"
+        },
+        "examples": [
+          "jt translate flask.jts --to rust",
+          "jt translate langchain.jts --to javascript",
+          "jt translate sklearn.jts --to java"
+        ]
+      },
+      "run": {
+        "description": "Execute a .jts graph on its target runtime (via Docker)",
+        "usage": "jt run <file.jts> [--port <port>] [--env <key=value>]",
+        "options": {
+          "--port": "Expose port (for network tools)",
+          "--env":  "Environment variables",
+          "--dry":  "Validate without executing"
+        },
+        "examples": [
+          "jt run flask_rust.jts --port 8080",
+          "jt run sklearn_java.jts",
+          "jt run langchain_typescript.jts --env API_KEY=xxx"
+        ]
+      },
+      "convert": {
+        "description": "Convert between runtimes directly (extract + translate in one step)",
+        "usage": "jt convert --from <source> --to <runtime> --target <pkg|url>",
+        "examples": [
+          "jt convert --from python --to rust --target flask",
+          "jt convert --from python --to typescript --target langchain"
+        ]
+      },
+      "validate": {
+        "description": "Compare behavior of two .jts files (reference vs translated)",
+        "usage": "jt validate <reference.jts> <translated.jts>",
+        "examples": [
+          "jt validate flask_python.jts flask_rust.jts"
+        ]
+      },
+      "install": {
+        "description": "Install a runtime package (JTP, JTJS, JTR...)",
+        "usage": "jt install <JTP|JTJS|JTJV|JTCS|JTR>",
+        "examples": [
+          "jt install JTR",
+          "jt install JTJS"
+        ]
+      }
+    }
+  },
+
+  "pipeline": {
+    "default_steps": [
+      { "step": 1, "action": "extract",   "description": "Hybrid static + dynamic extraction" },
+      { "step": 2, "action": "classify",  "description": "Domain detection via signature similarity" },
+      { "step": 3, "action": "assemble",  "description": "Build unified .jts graph" },
+      { "step": 4, "action": "translate", "description": "Auto-translate to target runtime" },
+      { "step": 5, "action": "validate",  "description": "Compare reference vs translated" },
+      { "step": 6, "action": "run",       "description": "Execute via Docker runtime" }
+    ]
+  },
+
+  "github_actions": {
+    "on_push": {
+      "branches": ["main"],
+      "actions": ["test", "build", "changelog", "release"]
+    },
+    "on_pr": {
+      "actions": ["test", "validate"]
+    }
+  },
+
+  "orchestration": {
+    "description": "This file IS the orchestrator. No shell scripts needed.",
+    "docker_compose": "docker-compose.yml",
+    "entry_point":    "jt.py"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "source_pkg": "flask",
+    "source_lang": "python",
+    "mode": "A",
+    "target": "flask",
+    "extractor": "Json-Transcript v1.0.0-beta",
+    "timestamp": "2026-03-13T12:58:15Z",
+    "target_runtime": "rust",
+    "translated_by": "Json-Transcript AutoTranslator v1.0.0-beta"
+  },
+  "imports": [
+    "use axum::{routing::{get,post}, Router, Json, extract::Path}",
+    "use serde::{Deserialize,Serialize}",
+    "use serde_json::{json, Value}"
+  ],
+  "edges": [],
+  "type_map": {
+    "str": "String",
+    "int": "i64",
+    "float": "f64",
+    "bool": "bool",
+    "dict": "serde_json::Value",
+    "list": "Vec<serde_json::Value>",
+    "null": "Option<()>"
+  },
+  "runtime_interface": {
+    "call_sequence": [],
+    "domain_map": {}
+  }
+}

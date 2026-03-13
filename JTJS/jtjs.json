@@ -1,0 +1,44 @@
+{
+  "package": "JTJS",
+  "version": "1.0.0-beta",
+  "name": "Json-Transcript JavaScript/TypeScript",
+  "runtime": "javascript",
+  "aliases": [
+    "javascript",
+    "typescript"
+  ],
+  "docker": "node:20-slim",
+  "description": "JavaScript & TypeScript runtime for Json-Transcript",
+  "install_colab": "!curl -sSL https://raw.githubusercontent.com/tryboy869/json-transcript/main/jt.py | python3 - install JTJS",
+  "framework_equiv": {
+    "flask": "express",
+    "fastapi": "fastify",
+    "pandas": "danfo.js"
+  },
+  "examples": [
+    {
+      "title": "Extract Flask \u2192 Express (Node.js)",
+      "steps": [
+        "jt extract --mode A --target flask --lang python",
+        "jt translate flask.jts --to javascript",
+        "jt run flask_javascript.jts --port 3000"
+      ]
+    },
+    {
+      "title": "Extract LangChain \u2192 TypeScript",
+      "steps": [
+        "jt extract --mode A --target langchain --lang python",
+        "jt translate langchain.jts --to typescript",
+        "jt run langchain_typescript.jts"
+      ]
+    }
+  ],
+  "commands": {
+    "extract_pkg": "jt extract --mode A --target <pkg_name> --lang javascript",
+    "extract_source": "jt extract --mode C --target <github_url> --lang javascript",
+    "extract_binary": "jt extract --mode D --target <path_to_binary>",
+    "translate": "jt translate <file.jts> --to <runtime>",
+    "run": "jt run <file.jts>",
+    "convert": "jt convert --from javascript --to <runtime> --target <pkg>"
+  }
+}

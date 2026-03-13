@@ -1,0 +1,43 @@
+{
+  "package": "JTR",
+  "version": "1.0.0-beta",
+  "name": "Json-Transcript Rust",
+  "runtime": "rust",
+  "aliases": [
+    "rust"
+  ],
+  "docker": "rust:1.75-slim",
+  "description": "Rust runtime for Json-Transcript \u2014 systems, performance, safety",
+  "install_colab": "!curl -sSL https://raw.githubusercontent.com/tryboy869/json-transcript/main/jt.py | python3 - install JTR",
+  "framework_equiv": {
+    "flask": "axum",
+    "fastapi": "actix-web",
+    "pandas": "polars"
+  },
+  "examples": [
+    {
+      "title": "Extract Flask \u2192 Axum (Rust)",
+      "steps": [
+        "jt extract --mode A --target flask --lang python",
+        "jt translate flask.jts --to rust",
+        "jt run flask_rust.jts --port 8080"
+      ]
+    },
+    {
+      "title": "Extract PyTorch model \u2192 Rust inference",
+      "steps": [
+        "jt extract --mode A --target torch --lang python",
+        "jt translate torch.jts --to rust",
+        "jt run torch_rust.jts"
+      ]
+    }
+  ],
+  "commands": {
+    "extract_pkg": "jt extract --mode A --target <pkg_name> --lang rust",
+    "extract_source": "jt extract --mode C --target <github_url> --lang rust",
+    "extract_binary": "jt extract --mode D --target <path_to_binary>",
+    "translate": "jt translate <file.jts> --to <runtime>",
+    "run": "jt run <file.jts>",
+    "convert": "jt convert --from rust --to <runtime> --target <pkg>"
+  }
+}

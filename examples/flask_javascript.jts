@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "source_pkg": "flask",
+    "source_lang": "python",
+    "mode": "A",
+    "target": "flask",
+    "extractor": "Json-Transcript v1.0.0-beta",
+    "timestamp": "2026-03-13T12:58:15Z",
+    "target_runtime": "javascript",
+    "translated_by": "Json-Transcript AutoTranslator v1.0.0-beta"
+  },
+  "imports": [
+    "const express = require('express')",
+    "app.use(express.json())"
+  ],
+  "edges": [],
+  "type_map": {
+    "str": "string",
+    "int": "number",
+    "float": "number",
+    "bool": "boolean",
+    "dict": "object",
+    "list": "Array",
+    "null": "null",
+    "number": "number"
+  },
+  "runtime_interface": {
+    "call_sequence": [],
+    "domain_map": {}
+  }
+}
